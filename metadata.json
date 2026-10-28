@@ -1,0 +1,6 @@
+{
+  "name": "OmniManage Hub",
+  "description": "Full-stack Enterprise Management Suite with dynamic database schemas, staff, project, inventory & task management, real-time REST API backend, ERD schema studio, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
