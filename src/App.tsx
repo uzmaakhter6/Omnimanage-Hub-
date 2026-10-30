@@ -11,6 +11,7 @@ import { AICopilotView } from './components/AICopilotView';
 import { AuditLogsView } from './components/AuditLogsView';
 import { AuthView } from './components/AuthView';
 import { SubscriptionView } from './components/SubscriptionView';
+import { GitDocsHubModal } from './components/GitDocsHubModal';
 import { 
   SystemStats, 
   Employee, 
@@ -127,6 +128,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [serverOnline, setServerOnline] = useState(true);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // GitHub & MySQL Docs Hub Modal + DML Permissions Mode (Safe Demo Mode: Delete Revoked for Students vs Full Admin DML)
+  const [isGitDocsOpen, setIsGitDocsOpen] = useState(false);
+  const [isDmlSafeMode, setIsDmlSafeMode] = useState(true);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
@@ -752,6 +757,12 @@ export default function App() {
         onOpenQuickAdd={() => handleOpenQuickAdd('task')}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onOpenGitDocs={() => setIsGitDocsOpen(true)}
+        isDmlSafeMode={isDmlSafeMode}
+        onToggleDmlMode={(mode) => {
+          setIsDmlSafeMode(mode);
+          showToast(mode ? 'Safe Demo Mode Activated: Delete rights revoked.' : 'SuperAdmin Mode Activated: Full DML Unlocked.');
+        }}
       />
 
       {/* Main Body Layout */}
@@ -763,6 +774,7 @@ export default function App() {
           stats={stats}
           schemaTableCount={databaseSchema.tables.length}
           currentUser={currentUser}
+          onOpenGitDocs={() => setIsGitDocsOpen(true)}
         />
 
         {/* Content View Canvas */}
@@ -821,12 +833,23 @@ export default function App() {
                 onAddInventory={handleAddInventory}
                 onUpdateInventory={handleUpdateInventory}
                 onDeleteInventory={handleDeleteInventory}
+                isDmlSafeMode={isDmlSafeMode}
+                onToggleDmlMode={(mode) => {
+                  setIsDmlSafeMode(mode);
+                  showToast(mode ? 'Safe Demo Mode Activated: Delete rights revoked.' : 'SuperAdmin Mode Activated: Full DML Unlocked.');
+                }}
               />
             )}
 
             {activeTab === 'schema' && (
               <SchemaStudioView
                 databaseSchema={databaseSchema}
+                employees={employees}
+                projects={projects}
+                tasks={tasks}
+                inventory={inventory}
+                departments={departments}
+                auditLogs={auditLogs}
                 onAddCustomTable={handleAddCustomTable}
               />
             )}
@@ -850,6 +873,17 @@ export default function App() {
           </div>
         </main>
       </div>
+
+      {/* GitHub Repository & MySQL Presentation Hub Modal */}
+      <GitDocsHubModal
+        isOpen={isGitDocsOpen}
+        onClose={() => setIsGitDocsOpen(false)}
+        isDmlSafeMode={isDmlSafeMode}
+        onToggleDmlMode={(mode) => {
+          setIsDmlSafeMode(mode);
+          showToast(mode ? 'Safe Demo Mode Activated: Delete rights revoked.' : 'SuperAdmin Mode Activated: Full DML Unlocked.');
+        }}
+      />
 
       {/* Global Toast Notification */}
       {notification && (

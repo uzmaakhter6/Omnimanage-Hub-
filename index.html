@@ -22,12 +22,44 @@
           // Ignore if already configurable
         }
 
-        // Prevent external browser extension errors from breaking application execution
+        // Prevent external browser extension errors and Vite HMR WebSocket closed errors from causing unhandled crashes
         window.addEventListener('error', function(event) {
-          if (event.filename && event.filename.indexOf('chrome-extension://') !== -1) {
+          var msg = (event && event.message) || '';
+          var file = (event && event.filename) || '';
+          if (
+            file.indexOf('chrome-extension://') !== -1 ||
+            file.indexOf('@vite/client') !== -1 ||
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('fetch') !== -1
+          ) {
             event.stopImmediatePropagation();
+            if (typeof event.preventDefault === 'function') {
+              event.preventDefault();
+            }
+            return true;
           }
         }, true);
+
+        // Catch unhandled WebSocket rejections from @vite/client
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event && event.reason;
+          var str = '';
+          if (typeof reason === 'string') {
+            str = reason;
+          } else if (reason && typeof reason === 'object') {
+            str = (reason.message || '') + ' ' + (reason.stack || '');
+          }
+          if (
+            str.indexOf('WebSocket') !== -1 ||
+            str.indexOf('@vite/client') !== -1 ||
+            str.indexOf('chrome-extension://') !== -1
+          ) {
+            event.stopImmediatePropagation();
+            if (typeof event.preventDefault === 'function') {
+              event.preventDefault();
+            }
+          }
+        });
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

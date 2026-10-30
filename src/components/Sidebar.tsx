@@ -10,7 +10,9 @@ import {
   History, 
   Layers,
   ArrowUpRight,
-  Crown
+  Crown,
+  Github,
+  Terminal
 } from 'lucide-react';
 import { ActiveTab, SystemStats, AuthUser } from '../types';
 
@@ -20,6 +22,7 @@ interface SidebarProps {
   stats: SystemStats | null;
   schemaTableCount: number;
   currentUser: AuthUser | null;
+  onOpenGitDocs?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -28,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   stats,
   schemaTableCount,
   currentUser,
+  onOpenGitDocs,
 }) => {
   const navItems = [
     {
@@ -150,6 +154,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Open Schema Designer</span>
             <ArrowUpRight className="w-3 h-3" />
           </button>
+
+          {onOpenGitDocs && (
+            <button
+              onClick={onOpenGitDocs}
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded bg-slate-800/80 hover:bg-slate-750 text-slate-200 hover:text-white text-[11px] font-mono transition-colors border border-slate-700 cursor-pointer mt-1"
+            >
+              <Github className="w-3 h-3 text-cyan-400" />
+              <span>Git & MySQL Docs Hub</span>
+            </button>
+          )}
         </div>
       </div>
 

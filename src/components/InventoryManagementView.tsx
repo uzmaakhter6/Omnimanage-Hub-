@@ -12,7 +12,12 @@ import {
   TrendingDown, 
   Layers,
   MapPin,
-  RefreshCw
+  RefreshCw,
+  Lock,
+  Unlock,
+  Terminal,
+  ShieldAlert,
+  Database
 } from 'lucide-react';
 import { InventoryItem, InventoryCategory } from '../types';
 
@@ -21,6 +26,8 @@ interface InventoryManagementViewProps {
   onAddInventory: (item: Partial<InventoryItem>) => Promise<void>;
   onUpdateInventory: (id: string, item: Partial<InventoryItem>) => Promise<void>;
   onDeleteInventory: (id: string) => Promise<void>;
+  isDmlSafeMode?: boolean;
+  onToggleDmlMode?: (mode: boolean) => void;
 }
 
 const CATEGORIES: InventoryCategory[] = [
@@ -36,14 +43,29 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
   onAddInventory,
   onUpdateInventory,
   onDeleteInventory,
+  isDmlSafeMode = true,
+  onToggleDmlMode,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
 
+  // Safe Mode Warning Modal
+  const [safeDeleteWarning, setSafeDeleteWarning] = useState<{ isOpen: boolean; itemName: string; itemId: string } | null>(null);
+
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+
+  const handleDeleteClick = (item: InventoryItem) => {
+    if (isDmlSafeMode) {
+      setSafeDeleteWarning({ isOpen: true, itemName: item.name, itemId: item.id });
+      return;
+    }
+    if (confirm(`Execute MySQL DML: DELETE FROM inventory_items WHERE id = '${item.id}' (${item.name})?`)) {
+      onDeleteInventory(item.id);
+    }
+  };
 
   const [formData, setFormData] = useState({
     sku: '',
@@ -133,19 +155,69 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
         <div>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Package className="w-5 h-5 text-indigo-400" />
-            <span>IT Assets & Inventory Supply</span>
+            <span>IT Assets & Inventory Supply (Item Master)</span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Track hardware provisions, software licensing, reorder thresholds, and warehouse logistics.
           </p>
         </div>
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Asset</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {onToggleDmlMode && (
+            <button
+              onClick={() => onToggleDmlMode(!isDmlSafeMode)}
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                isDmlSafeMode
+                  ? 'bg-slate-800 text-emerald-300 border-emerald-500/40 hover:bg-slate-750'
+                  : 'bg-purple-600/20 text-purple-200 border-purple-500/50 hover:bg-purple-600/30'
+              }`}
+              title="Toggle between Safe Student Demo Mode and Full Admin DML Mode"
+            >
+              {isDmlSafeMode ? <Lock className="w-3.5 h-3.5 text-emerald-400" /> : <Unlock className="w-3.5 h-3.5 text-purple-400" />}
+              <span>{isDmlSafeMode ? 'Safe Demo Mode' : 'Admin DML Mode'}</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Asset (INSERT)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Item Master & Inventory DML Banner */}
+      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+            <Database className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-xs font-bold font-mono text-slate-100 uppercase tracking-wider">
+                Item Master DML Engine (MySQL 8.0 / InnoDB)
+              </h3>
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold border ${
+                isDmlSafeMode 
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' 
+                  : 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+              }`}>
+                {isDmlSafeMode ? '🛡️ Safe Demo: Delete Revoked' : '👑 SuperAdmin: Full DML Unlocked'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Supports real-time <code className="text-cyan-300 font-mono">SELECT</code>, <code className="text-emerald-300 font-mono">INSERT</code>, <code className="text-blue-300 font-mono">UPDATE</code> (Restock), and <code className="text-rose-300 font-mono">DELETE</code> statements logged to MySQL audit trails.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-mono shrink-0">
+          <span className="text-[10px] text-slate-500">Curriculum Engine:</span>
+          <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-cyan-300 text-[11px] font-bold">
+            MySQL 8.0 @ Aiven Cloud
+          </span>
+        </div>
       </div>
 
       {/* Summary Valuation Strip */}
@@ -312,13 +384,13 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Delete item [${item.sku}] ${item.name}?`)) {
-                            onDeleteInventory(item.id);
-                          }
-                        }}
-                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
-                        title="Delete Item"
+                        onClick={() => handleDeleteClick(item)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          isDmlSafeMode
+                            ? 'bg-slate-800 hover:bg-amber-950/40 text-slate-400 hover:text-amber-400'
+                            : 'bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-400'
+                        }`}
+                        title={isDmlSafeMode ? 'Safe Demo Mode: Delete Rights Protected (Click for Info)' : 'Execute MySQL DML: DELETE Item'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -455,6 +527,63 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Safe Demo Mode Delete Warning Modal */}
+      {safeDeleteWarning && safeDeleteWarning.isOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-amber-400 font-mono font-bold text-sm">
+                <ShieldAlert className="w-5 h-5 text-amber-400" />
+                <span>Protected Demo Mode: Delete Revoked</span>
+              </div>
+              <button
+                onClick={() => setSafeDeleteWarning(null)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-300">
+              <p className="leading-relaxed">
+                You clicked delete on <strong className="text-white">"{safeDeleteWarning.itemName}"</strong>.
+              </p>
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] leading-relaxed">
+                <strong>Why are delete rights revoked?</strong> In this presentation CRM, destructive <code className="font-mono font-bold">DELETE</code> rights are safeguarded in demo mode so that visitors or testing users cannot accidentally purge master inventory items or cascade-wipe records during demonstrations.
+              </div>
+              <p className="text-slate-400 text-[11px]">
+                To proceed with this deletion, switch to <strong className="text-purple-300 font-mono">SuperAdmin (Full DML) Mode</strong>.
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-end gap-2 text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => setSafeDeleteWarning(null)}
+                className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
+              >
+                Keep Protected (Cancel)
+              </button>
+              {onToggleDmlMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onToggleDmlMode(false);
+                    const idToDelete = safeDeleteWarning.itemId;
+                    setSafeDeleteWarning(null);
+                    onDeleteInventory(idToDelete);
+                  }}
+                  className="w-full sm:w-auto px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold shadow-md shadow-purple-600/30 flex items-center justify-center gap-1.5"
+                >
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>Switch to Admin & Delete</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

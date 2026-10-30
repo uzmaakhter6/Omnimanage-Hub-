@@ -7,12 +7,16 @@ import {
   Database, 
   Search, 
   Bell, 
-  PlusCircle, 
-  CheckCircle2, 
   Server,
   Crown,
   LogOut,
-  User
+  User,
+  Github,
+  Lock,
+  Unlock,
+  FileCode2,
+  PlusCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { ActiveTab, SystemStats, AuthUser } from '../types';
 
@@ -27,6 +31,9 @@ interface NavbarProps {
   onOpenQuickAdd: () => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
+  onOpenGitDocs: () => void;
+  isDmlSafeMode: boolean;
+  onToggleDmlMode: (mode: boolean) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -39,7 +46,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetSeed,
   onOpenQuickAdd,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  onOpenGitDocs,
+  isDmlSafeMode,
+  onToggleDmlMode
 }) => {
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
@@ -91,6 +101,57 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Controls & Health */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Subscription Plan Button */}
+        {/* GitHub & MySQL Docs Center Button */}
+        <button
+          onClick={onOpenGitDocs}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-slate-800 hover:bg-slate-750 text-cyan-300 border border-cyan-500/30 transition-all shadow-sm cursor-pointer"
+          title="Open GitHub Repository Presentation, README.md, ERD & MySQL Docs"
+        >
+          <Github className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="hidden sm:inline">Git & MySQL Docs</span>
+        </button>
+
+        {/* DML Rights / Safe Demo Mode Switcher */}
+        <button
+          onClick={() => onToggleDmlMode(!isDmlSafeMode)}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all cursor-pointer ${
+            isDmlSafeMode
+              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/20'
+              : 'bg-purple-500/20 text-purple-200 border-purple-500/50 hover:bg-purple-500/30'
+          }`}
+          title={
+            isDmlSafeMode
+              ? 'Safe Demo Mode: Delete rights revoked so demo data stays safe during presentation. Click to unlock Admin Full DML.'
+              : 'SuperAdmin Mode: Full DML active (INSERT, UPDATE, DELETE). Click to switch to Safe Demo Mode.'
+          }
+        >
+          {isDmlSafeMode ? (
+            <>
+              <Lock className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden md:inline">Safe Demo (Delete Revoked)</span>
+              <span className="md:hidden">Safe Demo</span>
+            </>
+          ) : (
+            <>
+              <Unlock className="w-3.5 h-3.5 text-purple-400" />
+              <span className="hidden md:inline">Admin (Full DML)</span>
+              <span className="md:hidden">Admin DML</span>
+            </>
+          )}
+        </button>
+
+        {/* Aiven Cloud MySQL Indicator */}
+        <div 
+          onClick={onOpenGitDocs}
+          className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 cursor-pointer hover:border-cyan-500/40 transition-colors"
+          title="Click to view Aiven Cloud MySQL Architecture & Connection Details"
+        >
+          <Database className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="text-slate-400">DB:</span>
+          <span className="font-mono font-medium text-cyan-200">MySQL 8.0 (Aiven 1GB)</span>
+        </div>
+
         {/* Subscription Plan Button */}
         <button
           onClick={() => setActiveTab('subscription')}
